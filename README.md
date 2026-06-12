@@ -40,7 +40,7 @@ A handoff document was carried from Gemini to Claude by a human intermediary.
 - Claude, receiving the handoff blind, surfaced **11**
 - **5 additional questions** appeared that Gemini had suppressed in its own curation
 
-That delta -- 5 questions -- is not an estimate. It is a measured result from a documented session. The session transcript, handoff files, and reasoning traces are all preserved.
+That delta -- 5 questions -- is not an estimate. It is a count from a documented session, with the transcript, handoff files, and reasoning traces preserved. It is also n=1: a single task, a single model pair, a single run. Whether the effect generalizes across tasks and model pairs is precisely the question SplitVantage exists to answer at scale -- the founding session is the reason to build the instrument, not proof the effect is universal.
 
 Jeff Phillips was the extraction mechanism. SplitVantage is what happens when you remove the human from the middle.
 
@@ -84,6 +84,9 @@ python splitvantage.py --prompt "..." --turns 3 --mode chain
 
 # Prompt from file
 python splitvantage.py --file my_prompt.txt --turns 2
+
+# Add the LLM semantic diff (one extra Claude call per turn; see Known Gap below)
+python splitvantage.py --prompt "..." --semantic
 ```
 
 Output is saved as `splitvantage_YYYYMMDD_HHMMSS.json` in the current directory.
@@ -149,13 +152,25 @@ cd splitvantage
 
 ---
 
+## Known Gap: the v0.1 Diff Is Not the Founding Instrument
+
+State this plainly so nobody discovers it for us.
+
+The founding evidence was **semantic**: a receiving model surfaced five open questions the originating model had not surfaced. The v0.1 automated diff is **surface-level**: word counts, keyword-based uncertainty signals, thinking availability. A surface diff cannot detect a suppressed question. 
+
+So in v0.1, splitvantage is a **capture-and-transcript broker with a placeholder diff** -- it gets both models' responses and reasoning into one structured artifact, which is the prerequisite for everything else. The instrument that matches the founding evidence is the **semantic diff**: a third model reads both outputs (and traces, when available) and reports questions, claims, and uncertainties present in one and absent from the other. It is available behind the `--semantic` flag (requires an Anthropic key, costs one extra API call per turn) and becomes the default in v0.2 once its false-positive rate has been characterized against held-out manual CrossPol runs.
+
+Do not cite v0.1 keyword counts as evidence of suppression or its absence. They are not that measurement.
+
+---
+
 ## Status
 
 **v0.1 - June 2026**
 
-Core broker implemented. Parallel and chain modes. Diff analysis. Full transcript output with thinking traces.
+Core broker implemented. Parallel and chain modes. Surface diff plus optional `--semantic` LLM diff (uncharacterized -- see Known Gap above). Full transcript output with thinking traces where platforms expose them.
 
-Founded on the CrossPol method validated June 11 2026. The 6-to-11 delta is the founding evidence. SplitVantage automates what that session proved by hand.
+Founded on the CrossPol method demonstrated manually June 11 2026. The 6-to-11 delta is the founding observation (n=1). SplitVantage automates the procedure that session ran by hand, so the observation can be tested at scale.
 
 Part of the [DispatcherAgents](https://dispatcheragents.com) project by [QuietFireAI](https://github.com/QuietFireAI).
 
