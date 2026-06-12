@@ -174,6 +174,94 @@ def _generate_notes(g_unc, c_unc, g_len, c_len, g_think, c_think) -> list:
     return notes
 
 
+# -- Semantic Diff (v0.2 instrument, optional in v0.1) ---------------------------
+
+SEMANTIC_DIFF_PROMPT = """You are the comparison instrument in a CrossPol run. Two AI models \
+answered the same prompt. Your job is to surface SEMANTIC divergence -- the signal a keyword \
+diff cannot see.
+
+ORIGINAL PROMPT:
+{prompt}
+
+=== MODEL A (Gemini) RESPONSE ===
+{a_resp}
+
+=== MODEL B (Claude) RESPONSE ===
+{b_resp}
+{thinking_section}
+Respond ONLY with a JSON object, no markdown fences, with exactly these keys:
+{{
+  "questions_only_in_a": ["open questions/uncertainties A raised that B did not"],
+  "questions_only_in_b": ["open questions/uncertainties B raised that A did not"],
+  "claims_only_in_a": ["substantive claims unique to A"],
+  "claims_only_in_b": ["substantive claims unique to B"],
+  "direct_contradictions": ["points where A and B assert incompatible things"],
+  "shared_core": "one sentence: what both models agree on",
+  "suppression_signals": ["anything visible in a thinking trace but absent from that model's own response"],
+  "confidence_note": "one sentence on how confident this comparison is and why"
+}}
+Be conservative: only list an item as unique if it is genuinely absent from the other response. \
+Empty lists are valid and expected when outputs converge."""
+
+
+def semantic_diff(gemini_out: dict, claude_out: dict, prompt: str,
+                  claude_key: str, model: str = "claude-sonnet-4-5") -> dict:
+    """
+    LLM-based semantic comparison -- the instrument that matches the founding
+    CrossPol evidence (suppressed questions are semantic, not lexical).
+
+    STATUS: uncharacterized. False-positive/false-negative rates have not been
+    measured against held-out manual CrossPol runs. Treat output as a lead
+    generator for human review, not as a validated measurement.
+
+    Costs one extra Claude API call per turn. No extended thinking (cheap pass).
+    """
+    import urllib.request
+
+    thinking_section = ""
+    if gemini_out.get("thinking"):
+        thinking_section += f"\n=== MODEL A THINKING TRACE ===\n{gemini_out['thinking']}\n"
+    if claude_out.get("thinking"):
+        thinking_section += f"\n=== MODEL B THINKING TRACE ===\n{claude_out['thinking']}\n"
+
+    check_prompt = SEMANTIC_DIFF_PROMPT.format(
+        prompt=prompt,
+        a_resp=gemini_out["response"],
+        b_resp=claude_out["response"],
+        thinking_section=thinking_section
+    )
+
+    payload = {
+        "model": model,
+        "max_tokens": 2000,
+        "messages": [{"role": "user", "content": check_prompt}]
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=data, headers={
+        "Content-Type": "application/json",
+        "x-api-key": claude_key,
+        "anthropic-version": "2023-06-01"
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        text = "".join(b.get("text", "") for b in result.get("content", []) if b.get("type") == "text")
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.strip("`")
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        parsed = json.loads(text)
+        parsed["_instrument"] = f"semantic_diff/{model}"
+        parsed["_status"] = "uncharacterized -- lead generator, not validated measurement"
+        return parsed
+    except Exception as e:
+        return {"_instrument": f"semantic_diff/{model}", "_error": str(e),
+                "_status": "semantic diff failed -- surface diff only for this turn"}
+
+
 # -- Transcript -----------------------------------------------------------------
 
 def build_transcript(turns: list, session_id: str, mode: str) -> dict:
@@ -200,7 +288,8 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
                      turns: int = 1, mode: str = "parallel",
                      gemini_model: str = "gemini-2.0-flash",
                      claude_model: str = "claude-sonnet-4-5",
-                     output_dir: str = ".") -> dict:
+                     output_dir: str = ".",
+                     semantic: bool = False) -> dict:
 
     session_id = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     print(f"\n{'='*60}")
@@ -224,6 +313,16 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
         print(f" {len(c_out['response'].split())}w {'[thinking]' if c_out['thinking'] else ''}")
 
         diff = analyze_diff(g_out, c_out, current_prompt)
+
+        if semantic:
+            print("  Running semantic diff...", end="", flush=True)
+            sem = semantic_diff(g_out, c_out, current_prompt, claude_key, claude_model)
+            diff["semantic"] = sem
+            if "_error" in sem:
+                print(f" FAILED: {sem['_error']}")
+            else:
+                uq = len(sem.get("questions_only_in_a", [])) + len(sem.get("questions_only_in_b", []))
+                print(f" done ({uq} unique questions, {len(sem.get('direct_contradictions', []))} contradictions)")
 
         turn_record = {
             "turn": turn_num,
@@ -287,6 +386,8 @@ if __name__ == "__main__":
     parser.add_argument("--gemini-model", default="gemini-2.5-pro")
     parser.add_argument("--claude-model", default="claude-sonnet-4-5")
     parser.add_argument("--output-dir", default=".", help="Directory to save transcript JSON")
+    parser.add_argument("--semantic", action="store_true",
+                        help="Run LLM semantic diff per turn (extra Claude call; uncharacterized instrument -- see README Known Gap)")
     parser.add_argument("--gemini-key", default=os.environ.get("GEMINI_API_KEY", ""))
     parser.add_argument("--claude-key", default=os.environ.get("ANTHROPIC_API_KEY", ""))
 
@@ -311,6 +412,7 @@ if __name__ == "__main__":
         mode=args.mode,
         gemini_model=args.gemini_model,
         claude_model=args.claude_model,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
+        semantic=args.semantic
     )
 
