@@ -1,6 +1,6 @@
 """
 splitvantage.py
-SplitVantage -- Automated CrossPoll broker between two AI models.
+SplitVantage -- Automated CrossPol broker between two AI models.
 
 Sends the same prompt to both Gemini and Claude.
 Captures both responses + any available reasoning.
@@ -25,22 +25,26 @@ import datetime
 from pathlib import Path
 
 
-# ── API Clients ────────────────────────────────────────────────────────────────
+# -- API Clients ----------------------------------------------------------------
 
-def get_gemini_response(prompt: str, api_key: str, model: str = "gemini-2.5-pro") -> dict:
+def get_gemini_response(prompt: str, api_key: str, model: str = "gemini-2.0-flash") -> dict:
     """Call Gemini API and return response + thinking if available."""
     import urllib.request
     import urllib.error
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.7},
-        "thinkingConfig": {"includeThoughts": True}
+        "generationConfig": {
+            "temperature": 1.0
+        }
     }
 
     data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(url, data=data, headers={
+        "Content-Type": "application/json",
+        "X-goog-api-key": api_key
+    })
 
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
@@ -62,7 +66,10 @@ def get_gemini_response(prompt: str, api_key: str, model: str = "gemini-2.5-pro"
             "raw": result
         }
     except Exception as e:
-        return {"model": f"gemini/{model}", "response": f"ERROR: {e}", "thinking": "", "raw": {}}
+        import traceback
+        detail = traceback.format_exc()
+        print(f"\nGemini ERROR detail: {e}")
+        return {"model": f"gemini/{model}", "response": f"ERROR: {e}", "thinking": "", "raw": {"error": str(e), "detail": detail}}
 
 
 def get_claude_response(prompt: str, api_key: str, model: str = "claude-sonnet-4-5") -> dict:
@@ -107,7 +114,7 @@ def get_claude_response(prompt: str, api_key: str, model: str = "claude-sonnet-4
         return {"model": f"claude/{model}", "response": f"ERROR: {e}", "thinking": "", "raw": {}}
 
 
-# ── Diff Analysis ──────────────────────────────────────────────────────────────
+# -- Diff Analysis --------------------------------------------------------------
 
 def analyze_diff(gemini_out: dict, claude_out: dict, prompt: str) -> dict:
     """
@@ -161,13 +168,13 @@ def _generate_notes(g_unc, c_unc, g_len, c_len, g_think, c_think) -> list:
     if c_think and not g_think:
         notes.append("Claude thinking captured; Gemini thinking unavailable")
     if g_think and c_think:
-        notes.append("Both models' thinking traces captured -- full CrossPoll data available")
+        notes.append("Both models' thinking traces captured -- full CrossPol data available")
     if not notes:
         notes.append("Outputs appear structurally similar -- review full text for semantic divergence")
     return notes
 
 
-# ── Transcript ─────────────────────────────────────────────────────────────────
+# -- Transcript -----------------------------------------------------------------
 
 def build_transcript(turns: list, session_id: str, mode: str) -> dict:
     return {
@@ -187,11 +194,11 @@ def build_transcript(turns: list, session_id: str, mode: str) -> dict:
     }
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# -- Main -----------------------------------------------------------------------
 
 def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
                      turns: int = 1, mode: str = "parallel",
-                     gemini_model: str = "gemini-2.5-pro",
+                     gemini_model: str = "gemini-2.0-flash",
                      claude_model: str = "claude-sonnet-4-5",
                      output_dir: str = ".") -> dict:
 
@@ -205,7 +212,7 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
     current_prompt = prompt
 
     for turn_num in range(1, turns + 1):
-        print(f"── Turn {turn_num}/{turns} ──────────────────────────────")
+        print(f"-- Turn {turn_num}/{turns} ------------------------------")
         print(f"Prompt ({len(current_prompt.split())}w): {current_prompt[:120]}{'...' if len(current_prompt) > 120 else ''}\n")
 
         print("  Calling Gemini...", end="", flush=True)
@@ -239,7 +246,7 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
 
         # Notes
         for note in diff["notes"]:
-            print(f"  ⚑ {note}")
+            print(f"  * {note}")
 
         # Chain mode: next prompt includes previous responses
         if mode == "chain" and turn_num < turns:
@@ -268,10 +275,10 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
     return transcript
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# -- CLI ------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="SplitVantage -- Automated CrossPoll between Gemini and Claude")
+    parser = argparse.ArgumentParser(description="SplitVantage -- Automated CrossPol between Gemini and Claude")
     parser.add_argument("--prompt", type=str, help="Prompt to send to both models")
     parser.add_argument("--file", type=str, help="Path to file containing prompt")
     parser.add_argument("--turns", type=int, default=1, help="Number of exchange turns (default: 1)")
@@ -306,3 +313,4 @@ if __name__ == "__main__":
         claude_model=args.claude_model,
         output_dir=args.output_dir
     )
+

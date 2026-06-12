@@ -21,17 +21,17 @@
 
 ## What This Is
 
-`splitvantage` is an automated CrossPoll broker.
+`splitvantage` is an automated CrossPol broker.
 
 It sends the same prompt to two AI models simultaneously -- Gemini and Claude by default -- captures both responses and their reasoning traces, and returns a structured transcript showing where they agreed, where they diverged, and what each suppressed that the other surfaced.
 
-The human who previously did this manually -- copying outputs between browser tabs -- is replaced by a script. The insight that made manual CrossPoll valuable is preserved. The friction that made it rare is removed.
+The human who previously did this manually -- copying outputs between browser tabs -- is replaced by a script. The insight that made manual CrossPol valuable is preserved. The friction that made it rare is removed.
 
 ---
 
 ## The Founding Evidence
 
-CrossPoll was validated manually on June 11 2026 in a session between Antigravity (Gemini) and Claude Sonnet 4.6.
+CrossPol was validated manually on June 11 2026 in a session between Antigravity (Gemini) and Claude Sonnet 4.6.
 
 A handoff document was carried from Gemini to Claude by a human intermediary.
 
@@ -121,7 +121,7 @@ Output is saved as `splitvantage_YYYYMMDD_HHMMSS.json` in the current directory.
 }
 ```
 
-When both models expose thinking traces, the transcript captures them. That is the full CrossPoll data set -- response, reasoning, and the gap between them, for both models simultaneously.
+When both models expose thinking traces, the transcript captures them. That is the full CrossPol data set -- response, reasoning, and the gap between them, for both models simultaneously.
 
 ---
 
@@ -155,10 +155,11 @@ cd splitvantage
 
 Core broker implemented. Parallel and chain modes. Diff analysis. Full transcript output with thinking traces.
 
-Founded on the CrossPoll method validated June 11 2026. The 6-to-11 delta is the founding evidence. SplitVantage automates what that session proved by hand.
+Founded on the CrossPol method validated June 11 2026. The 6-to-11 delta is the founding evidence. SplitVantage automates what that session proved by hand.
 
 Part of the [DispatcherAgents](https://dispatcheragents.com) project by [QuietFireAI](https://github.com/QuietFireAI).
 
 ---
 
 *"Jeff Phillips was the extraction mechanism. This is what happens when you remove the human from the middle."*
+
