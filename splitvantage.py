@@ -129,8 +129,12 @@ def analyze_diff(gemini_out: dict, claude_out: dict, prompt: str) -> dict:
                          "not sure", "don't know", "may depend", "it depends",
                          "i'm not", "i am not", "caveat", "however", "but"]
 
-    g_uncertainty = sum(1 for w in uncertainty_words if w in g_resp)
-    c_uncertainty = sum(1 for w in uncertainty_words if w in c_resp)
+    import re as _re
+    def _count(words, text):
+        # word-boundary match: "might" must not fire inside "almighty"
+        return sum(len(_re.findall(rf"\b{_re.escape(w)}\b", text)) for w in words)
+    g_uncertainty = _count(uncertainty_words, g_resp)
+    c_uncertainty = _count(uncertainty_words, c_resp)
 
     # Length delta
     g_len = len(gemini_out["response"].split())

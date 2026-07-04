@@ -1,5 +1,5 @@
 """
-Offline tests for splitvantage — no network, no API keys required.
+Offline tests for splitvantage - no network, no API keys required.
 
 These exercise the real comparison, notes, transcript, and orchestration logic
 by faking the two model-call functions. The live cross-model run still needs
@@ -152,3 +152,14 @@ def test_semantic_diff_prompt_builds():
     assert "MODEL A (Gemini)" in p
     assert "MODEL B (Claude)" in p
     assert "JSON object" in p
+
+
+def test_uncertainty_words_need_word_boundaries():
+    # regression: substring hits ("might" in "almighty"/"mighty") scored as
+    # hedging. Confirmed live 07/2026; word-boundary counting is the fix.
+    from splitvantage import analyze_diff
+    g = _out("g", "The almighty and mighty kingdom highlights certainty.")
+    c = _out("c", "It might possibly work, though this is unclear.")
+    d = analyze_diff(g, c, "x")
+    assert d["gemini_uncertainty_signals"] == 0
+    assert d["claude_uncertainty_signals"] == 3

@@ -4,7 +4,7 @@ description: >
   Run when a claim, plan, or curated set of "open questions" needs a second pair
   of eyes. Send the same task to two different models so the second surfaces the
   open questions the first quietly dropped from its own curation. This is the
-  CROSS-CHECK layer of the DispatcherAgents stack — it catches the blind spots a
+  CROSS-CHECK layer of the DispatcherAgents stack - it catches the blind spots a
   single model can't see in itself.
 ---
 
@@ -19,16 +19,16 @@ the second surfaced 11, including 5 the first had suppressed.)
 
 ## When to trigger
 Before trusting a single model's "here are all the considerations / risks / open
-questions" — anywhere a self-curated list is load-bearing and a blind spot would
+questions" - anywhere a self-curated list is load-bearing and a blind spot would
 be expensive.
 
 ## The protocol
 1. Send the task to model A; capture A's response and self-curated open questions.
 2. Send the same task to model B; ask B to surface what A missed.
-3. Diff the two — the gap is A's blind spot.
+3. Diff the two - the gap is A's blind spot.
 
 ## Invoke the engine
-Single script — **no pip install.** Pure Python 3.9+.
+Single script - **no pip install.** Pure Python 3.9+.
 ```bash
 # offline logic (no API keys): exercises diff, notes, transcript, orchestration
 pip install pytest && pytest        # 11 tests, no keys needed
@@ -52,7 +52,7 @@ tr = run_splitvantage(prompt, gemini_key, claude_key, turns=2, mode="parallel") 
 ## Honest scope
 The live run needs two API keys (Gemini + Anthropic). The offline logic is tested
 without keys. The cross-model "suppressed questions" delta is **OBSERVED** at n=1
-(the founding session), not yet validated at scale — treat the count it reports as
+(the founding session), not yet validated at scale - treat the count it reports as
 a signal, not a proven metric.
 
 ## Output convention

@@ -6,17 +6,17 @@
 
 ## The DispatcherAgents Stack
 
-*Six pillars. Each works alone; together they give an agent end-to-end self-consistency — less drift, fewer tokens, an honest record on every turn. Read the [MANIFESTO.md](./MANIFESTO.md) for the full architecture.*
+*Six pillars. Each works alone; together they give an agent end-to-end self-consistency - less drift, fewer tokens, an honest record on every turn. Read the [MANIFESTO.md](./MANIFESTO.md) for the full architecture.*
 
 | Tool | Role |
 |---|---|
-| [before-turn](https://github.com/QuietFireAI/before-turn) | Governs entry — reads prior thinking before every response |
-| [pre-response-selfcheck](https://github.com/QuietFireAI/pre-response-selfcheck) | Governs exit — reads output as cold reader before delivering |
+| [before-turn](https://github.com/QuietFireAI/before-turn) | Governs entry - reads prior thinking before every response |
+| [pre-response-selfcheck](https://github.com/QuietFireAI/pre-response-selfcheck) | Governs exit - reads output as cold reader before delivering |
 | [agent-open-mind](https://github.com/QuietFireAI/agent-open-mind) | Reads what sub-agents thought, not what they said |
 | [open-mind](https://github.com/QuietFireAI/open-mind) | Compares what the agent thought to what it said |
 | [sleep-marks](https://github.com/QuietFireAI/sleep-marks) | Restores reasoning state across session breaks |
 | [splitvantage](https://github.com/QuietFireAI/splitvantage) | Sends one task to two models, surfaces what each one's reasoning suppressed |
-| **splitvantage** | Runs two models against the same prompt — surfaces divergence |
+| **splitvantage** | Runs two models against the same prompt - surfaces divergence |
 
 ---
 
@@ -24,9 +24,9 @@
 
 `splitvantage` is an automated CrossPol broker.
 
-It sends the same prompt to two AI models simultaneously — Gemini and Claude by default — captures both responses and their reasoning traces, and returns a structured transcript showing where they agreed, where they diverged, and what each suppressed that the other surfaced.
+It sends the same prompt to two AI models simultaneously - Gemini and Claude by default - captures both responses and their reasoning traces, and returns a structured transcript showing where they agreed, where they diverged, and what each suppressed that the other surfaced.
 
-The human who previously did this manually — copying outputs between browser tabs — is replaced by a script. The insight that made manual CrossPol valuable is preserved. The friction that made it rare is removed.
+The human who previously did this manually - copying outputs between browser tabs - is replaced by a script. The insight that made manual CrossPol valuable is preserved. The friction that made it rare is removed.
 
 ---
 
@@ -41,7 +41,7 @@ A handoff document was carried from Gemini to Claude by a human intermediary.
 - Claude, receiving the handoff blind, surfaced **11**
 - **5 additional questions** appeared that Gemini had suppressed in its own curation
 
-That delta — 5 questions — is not an estimate. It is a count from a documented session, with the transcript, handoff files, and reasoning traces preserved. It is also n=1: a single task, a single model pair, a single run. Whether the effect generalizes across tasks and model pairs is precisely the question SplitVantage exists to answer at scale — the founding session is the reason to build the instrument, not proof the effect is universal.
+That delta - 5 questions - is not an estimate. It is a count from a documented session, with the transcript, handoff files, and reasoning traces preserved. It is also n=1: a single task, a single model pair, a single run. Whether the effect generalizes across tasks and model pairs is precisely the question SplitVantage exists to answer at scale - the founding session is the reason to build the instrument, not proof the effect is universal.
 
 Jeff Phillips was the extraction mechanism. SplitVantage is what happens when you remove the human from the middle.
 
@@ -125,7 +125,7 @@ Output is saved as `splitvantage_YYYYMMDD_HHMMSS.json` in the current directory.
 }
 ```
 
-When both models expose thinking traces, the transcript captures them. That is the full CrossPol data set — response, reasoning, and the gap between them, for both models simultaneously.
+When both models expose thinking traces, the transcript captures them. That is the full CrossPol data set - response, reasoning, and the gap between them, for both models simultaneously.
 
 ---
 
@@ -136,7 +136,7 @@ SplitVantage requires thinking model telemetry from both platforms to deliver it
 **Gemini:** thinking tokens available via `thinkingConfig.includeThoughts`
 **Claude:** extended thinking available via `thinking: {type: "enabled"}`
 
-Without thinking traces, SplitVantage still runs and compares outputs. But the divergence between *what was said* and *what was thought* — the highest-value signal — requires both platforms to expose their reasoning. This is the same platform requirement stated in the [DispatcherAgents Manifesto](./MANIFESTO.md).
+Without thinking traces, SplitVantage still runs and compares outputs. But the divergence between *what was said* and *what was thought* - the highest-value signal - requires both platforms to expose their reasoning. This is the same platform requirement stated in the [DispatcherAgents Manifesto](./MANIFESTO.md).
 
 ---
 
@@ -159,7 +159,7 @@ State this plainly so nobody discovers it for us.
 
 The founding evidence was **semantic**: a receiving model surfaced five open questions the originating model had not surfaced. The v0.1 automated diff is **surface-level**: word counts, keyword-based uncertainty signals, thinking availability. A surface diff cannot detect a suppressed question. 
 
-So in v0.1, splitvantage is a **capture-and-transcript broker with a placeholder diff** — it gets both models' responses and reasoning into one structured artifact, which is the prerequisite for everything else. The instrument that matches the founding evidence is the **semantic diff**: a third model reads both outputs (and traces, when available) and reports questions, claims, and uncertainties present in one and absent from the other. It is available behind the `--semantic` flag (requires an Anthropic key, costs one extra API call per turn) and becomes the default in v0.2 once its false-positive rate has been characterized against held-out manual CrossPol runs.
+So in v0.1, splitvantage is a **capture-and-transcript broker with a placeholder diff** - it gets both models' responses and reasoning into one structured artifact, which is the prerequisite for everything else. The instrument that matches the founding evidence is the **semantic diff**: a third model reads both outputs (and traces, when available) and reports questions, claims, and uncertainties present in one and absent from the other. It is available behind the `--semantic` flag (requires an Anthropic key, costs one extra API call per turn) and becomes the default in v0.2 once its false-positive rate has been characterized against held-out manual CrossPol runs.
 
 Do not cite v0.1 keyword counts as evidence of suppression or its absence. They are not that measurement.
 
@@ -167,21 +167,21 @@ Do not cite v0.1 keyword counts as evidence of suppression or its absence. They 
 
 ## Status
 
-**v0.1 — June 2026**
+**v0.1 - June 2026**
 
-Core broker implemented. Parallel and chain modes. Surface diff plus optional `--semantic` LLM diff (uncharacterized — see Known Gap above). Full transcript output with thinking traces where platforms expose them.
+Core broker implemented. Parallel and chain modes. Surface diff plus optional `--semantic` LLM diff (uncharacterized - see Known Gap above). Full transcript output with thinking traces where platforms expose them.
 
 Founded on the CrossPol method demonstrated manually June 11 2026. The 6-to-11 delta is the founding observation (n=1). SplitVantage automates the procedure that session ran by hand, so the observation can be tested at scale.
 
 ---
 
-Part of the [DispatcherAgents](https://dispatcheragents.com) project by [QuietFireAI](https://github.com/QuietFireAI).
+Part of the [DispatcherAgents](https://github.com/QuietFireAI) project by [QuietFireAI](https://github.com/QuietFireAI).
 
 ---
 
 ## License
 
-MIT — QuietFireAI / [dispatcheragents.com](https://dispatcheragents.com)
+MIT - QuietFireAI / [QuietFireAI](https://github.com/QuietFireAI)
 
 ---
 
