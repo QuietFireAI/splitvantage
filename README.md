@@ -186,3 +186,7 @@ MIT - QuietFireAI / [QuietFireAI](https://github.com/QuietFireAI)
 ---
 
 *"One model's blind spot is another model's opening line. SplitVantage puts them in the same room."*
+
+## Runtime wiring
+
+Runtime wiring (dispatcher-agents): dispatcher/pillars.py second_opinion runs analyze_diff on two models' outputs for a drift-flagged decision; audited as splitvantage.review. The runtime never calls model APIs itself - callers supply outputs.
