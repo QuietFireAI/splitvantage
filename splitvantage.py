@@ -273,7 +273,7 @@ def build_transcript(turns: list, session_id: str, mode: str) -> dict:
         "splitvantage_version": "0.1",
         "session_id": session_id,
         "mode": mode,
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         "turn_count": len(turns),
         "turns": turns,
         "summary": {
@@ -295,7 +295,7 @@ def run_splitvantage(prompt: str, gemini_key: str, claude_key: str,
                      output_dir: str = ".",
                      semantic: bool = False) -> dict:
 
-    session_id = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    session_id = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
     print(f"\n{'='*60}")
     print(f"SplitVantage Session: {session_id}")
     print(f"Mode: {mode} | Turns: {turns}")
