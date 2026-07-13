@@ -2,7 +2,10 @@
 run_test.py - SplitVantage founding run. Keys via env vars.
 """
 import os, sys, json
-sys.path.insert(0, r"%USERPROFILE%\.gemini\antigravity\scratch\splitvantage")
+import os
+from pathlib import Path
+_ROOT = os.environ.get("SPLITVANTAGE_ROOT", str(Path(__file__).resolve().parent))
+sys.path.insert(0, _ROOT)
 from splitvantage import run_splitvantage
 
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -23,7 +26,7 @@ Question: How likely is it that this single instruction -- added as a post-gener
 at 5-10 percent token overhead -- meaningfully improves response quality for a cold reader?
 What are the failure modes of this approach? What would make it more robust?"""
 
-OUTPUT_DIR = r"%USERPROFILE%\.gemini\antigravity\scratch\splitvantage\transcripts"
+OUTPUT_DIR = os.environ.get("SPLITVANTAGE_TRANSCRIPTS", str(Path(_ROOT) / "transcripts"))
 
 result = run_splitvantage(
     prompt=PROMPT,
