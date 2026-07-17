@@ -144,6 +144,17 @@ def analyze_diff(gemini_out: dict, claude_out: dict, prompt: str) -> dict:
     g_has_thinking = bool(gemini_out.get("thinking"))
     c_has_thinking = bool(claude_out.get("thinking"))
 
+    # Model names: fixed 2026-07-17 - analyze_diff is invoked generically
+    # by dispatcher-agents' second_opinion() with arbitrary model pairs
+    # (out_a/out_b + .get("model")), not necessarily Gemini/Claude at all.
+    # The generated notes text used to hardcode "Gemini"/"Claude" literally
+    # regardless of which models were actually compared - misleading in
+    # any CrossPol run that isn't specifically Gemini-vs-Claude. Falls
+    # back to "Gemini"/"Claude" when no model name is supplied, preserving
+    # the original default-pairing behavior exactly.
+    g_name = gemini_out.get("model") or "Gemini"
+    c_name = claude_out.get("model") or "Claude"
+
     return {
         "prompt_length_words": len(prompt.split()),
         "gemini_response_words": g_len,
@@ -156,21 +167,23 @@ def analyze_diff(gemini_out: dict, claude_out: dict, prompt: str) -> dict:
         "claude_has_thinking": c_has_thinking,
         "thinking_available": g_has_thinking or c_has_thinking,
         "notes": _generate_notes(g_uncertainty, c_uncertainty, g_len, c_len,
-                                 g_has_thinking, c_has_thinking)
+                                 g_has_thinking, c_has_thinking,
+                                 g_name=g_name, c_name=c_name)
     }
 
 
-def _generate_notes(g_unc, c_unc, g_len, c_len, g_think, c_think) -> list:
+def _generate_notes(g_unc, c_unc, g_len, c_len, g_think, c_think,
+                    g_name="Gemini", c_name="Claude") -> list:
     notes = []
     if abs(g_len - c_len) > 200:
-        notes.append(f"Significant length divergence: Gemini {g_len}w vs Claude {c_len}w")
+        notes.append(f"Significant length divergence: {g_name} {g_len}w vs {c_name} {c_len}w")
     if abs(g_unc - c_unc) >= 3:
-        more = "Gemini" if g_unc > c_unc else "Claude"
+        more = g_name if g_unc > c_unc else c_name
         notes.append(f"{more} expressed more uncertainty ({max(g_unc,c_unc)} vs {min(g_unc,c_unc)} signals)")
     if g_think and not c_think:
-        notes.append("Gemini thinking captured; Claude thinking unavailable")
+        notes.append(f"{g_name} thinking captured; {c_name} thinking unavailable")
     if c_think and not g_think:
-        notes.append("Claude thinking captured; Gemini thinking unavailable")
+        notes.append(f"{c_name} thinking captured; {g_name} thinking unavailable")
     if g_think and c_think:
         notes.append("Both models' thinking traces captured -- full CrossPol data available")
     if not notes:

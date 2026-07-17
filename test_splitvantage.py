@@ -54,6 +54,31 @@ def test_analyze_diff_thinking_flags():
     assert d["thinking_available"] is True
 
 
+# ---------------------------------------------------------- THE FIX: 2026-07-17
+def test_analyze_diff_notes_use_real_model_names_not_hardcoded_gemini_claude():
+    """dispatcher-agents' second_opinion() calls analyze_diff generically
+    with arbitrary model pairs (out_a/out_b + .get('model')), not
+    necessarily Gemini/Claude at all. The generated notes text used to
+    hardcode 'Gemini'/'Claude' literally regardless of which models were
+    actually compared - misleading in any CrossPol run using other models."""
+    a = _out("gpt-4", "This might possibly be uncertain, perhaps.")
+    b = _out("llama-3", "This is definitely correct.")
+    d = sv.analyze_diff(a, b, "p")
+    notes_text = " ".join(d["notes"])
+    assert "gpt-4" in notes_text or "llama-3" in notes_text
+    assert "Gemini" not in notes_text and "Claude" not in notes_text
+
+
+def test_analyze_diff_notes_fall_back_to_gemini_claude_when_no_model_name():
+    """Backward compatibility: omitting 'model' preserves the original
+    default-pairing labels exactly."""
+    g = {"response": "This might be uncertain, perhaps, however.", "thinking": ""}
+    c = {"response": "This is definitely correct.", "thinking": ""}
+    d = sv.analyze_diff(g, c, "p")
+    notes_text = " ".join(d["notes"])
+    assert "Gemini" in notes_text or "Claude" in notes_text
+
+
 # --- _generate_notes --------------------------------------------------------
 
 def test_notes_length_divergence():
